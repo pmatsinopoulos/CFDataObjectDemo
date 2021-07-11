@@ -12,7 +12,9 @@
 void printCustomer(Customer *customer) {
   assert(customer);
   
-  printf("Grade: %d, Salary: %d\n", customer->grade, customer->salary);
+  printf("Name: %s, Grade: %d, Salary: %d\n",
+         CFStringGetCStringPtr(customer->name, CFStringGetSystemEncoding()),
+         customer->grade, customer->salary);
 }
 
 void printArrayOfCustomers(Customer customers[], UInt8 numberOfCustomers) {
@@ -26,17 +28,18 @@ void printArrayOfCustomers(Customer customers[], UInt8 numberOfCustomers) {
 
 int main(int argc, const char * argv[]) {
   Customer customer;
+  customer.name = CFStringCreateCopy(kCFAllocatorDefault, CFSTR("Peter Pan"));
   customer.grade = 32000;
   customer.salary = 800;
   
   UInt8 *buffer = (UInt8 *)&customer;
   CFIndex bufferSize = sizeof(Customer);
   
-  CFDataRef myData = CFDataCreate(kCFAllocatorDefault, buffer, bufferSize);
+  CFDataRef cfCustomer = CFDataCreate(kCFAllocatorDefault, buffer, bufferSize);
   
 #pragma mark Inspect CFDataRef Object
-  const UInt8 *pToCFDataObject = CFDataGetBytePtr(myData);
-
+  const UInt8 *pToCFDataObject = CFDataGetBytePtr(cfCustomer);
+  
   printf("Customer in CFDataRef: ");
   printCustomer((Customer*) pToCFDataObject);
   printf("Customer in customer: ");
@@ -52,20 +55,20 @@ int main(int argc, const char * argv[]) {
   
 #pragma mark Copy Bytes to External Storage
   Customer customer2;
-  CFDataGetBytes(myData, CFRangeMake(0, CFDataGetLength(myData)), (UInt8 *)&customer2);
+  CFDataGetBytes(cfCustomer, CFRangeMake(0, CFDataGetLength(cfCustomer)), (UInt8 *)&customer2);
   printf("customer2: ");
   printCustomer(&customer2);
   
 #pragma mark Releasing CFDataRef wrapped object
-  CFRelease(myData);
+  CFRelease(cfCustomer);
   
 #pragma mark Wrapping an Array to CFDataRef
   const int numberOfCustomers = 4;
   Customer customers[numberOfCustomers] = {
-    { .grade = 101, .salary = 10 },
-    { .grade = 102, .salary = 11 },
-    { .grade = 103, .salary = 13 },
-    { .grade = 104, .salary = 14 }
+    { .name = CFStringCreateCopy(kCFAllocatorDefault, CFSTR("Peter Pan")), .grade = 101, .salary = 10 },
+    { .name = CFStringCreateCopy(kCFAllocatorDefault, CFSTR("Mary Woo")), .grade = 102, .salary = 11 },
+    { .name = CFStringCreateCopy(kCFAllocatorDefault, CFSTR("Paul Adams")), .grade = 103, .salary = 13 },
+    { .name = CFStringCreateCopy(kCFAllocatorDefault, CFSTR("Harry Potter")), .grade = 104, .salary = 14 }
   };
   CFIndex customersSize = sizeof(Customer) * numberOfCustomers;
 #pragma mark Printing Customers from the Array
@@ -79,13 +82,13 @@ int main(int argc, const char * argv[]) {
   pToCFDataObject = CFDataGetBytePtr(cfArrayOfCustomers);
   printf("Customers in the CFDataRef Array of Customers:\n");
   printArrayOfCustomers((Customer *)pToCFDataObject, numberOfCustomers);
-  
+
 #pragma mark Find a Data Item in the CFDataRef with Array of Customers
   CFDataRef customerToFind = CFDataCreate(kCFAllocatorDefault, (const UInt8 *)(&customers[3]), sizeof(Customer));
   CFRange found = CFDataFind(cfArrayOfCustomers, customerToFind, CFRangeMake(0, CFDataGetLength(cfArrayOfCustomers)), 0);
   CFRelease(customerToFind);
   printf("Found: Position: %ld, %ld\n", found.location / sizeof(Customer), found.length);
-  
+
 #pragma mark Get copy of data from the CFDataRef that has an Array of Customers
   Customer customers2[numberOfCustomers];
   CFDataGetBytes(cfArrayOfCustomers, CFRangeMake(0, CFDataGetLength(cfArrayOfCustomers)), (UInt8 *)customers2);
