@@ -16,4 +16,8 @@ typedef struct {
   short salary;
 } Customer;
 
+void CustomerPrint(Customer *customer);
+
+void CustomerPrintArrayOf(Customer customers[], UInt8 numberOfCustomers);
+
 #endif /* Customer_h */
